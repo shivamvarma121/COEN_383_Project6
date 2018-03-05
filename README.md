@@ -1,9 +1,15 @@
 todo:
 
-send messages from pipe to main then sleep in a loop
-prompt user then send message to main from term
+general: 
+PIPE and Terminal simulators sending messages to main.
+using select() to fetch messages from main.
 
-add timestamps to messages from pipe/term
 
-use select in main to grab available messages 
-print selected message with timestamp
+
+pipe: send message to main then sleep in a loop for 30 sec real time
+
+terminal: prompt user for message then send it to main for 30 sec real time
+
+main: use select to grab available messages, and print selected message with timestamp prefix
+
+
