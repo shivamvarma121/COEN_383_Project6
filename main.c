@@ -9,11 +9,6 @@
 pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
-typedef struct msg{
-	int pipeid;	//id generated during creation to track pipes
-	char* ts;	//timestamp from pipe/terminal before sending message to main
-}MSG;
-
 static void* pipe_exec(void*);	// needs to be written before term
 static void* term_exec(void*);	// needs to be written after pipe
 void wakeup_threads();	// initiates all threads
@@ -23,19 +18,19 @@ char* gettimestamp();	//returns current timestamp, free when done.
 int main()
 {
 	pthread_t tids[5];	// 0,1,2,3 are pipes, 4 is terminal
-	for(int i = 0; i <4; i++) {
-		MSG* message = malloc(sizeof(MSG));
-		message->pipeid = i;
-		pthread_create(&tids[i], NULL, &pipe_exec, message);
+	int i;
+	for(i = 0; i <4; i++) {
+		pthread_create(&tids[i], NULL, &pipe_exec, &i);
 	}
-	MSG* message = malloc(sizeof(MSG));
-	message->pipeid = 4;
-	pthread_create(&tids[4], NULL, &term_exec, message);
+	i++;
+	pthread_create(&tids[4], NULL, &term_exec, &i);
 	
 	printf("Simulation ready, press any key to Continue\n");
 	getchar();
 	wakeup_threads();
-	sleep(30);
+
+
+	sleep(30);	// replace this with thread join asap
 
 
 	// needs to grab messages with select() and print timestamp + message when available
@@ -48,11 +43,11 @@ int main()
 
 
 // terminal simulator
-static void* term_exec(void* messg){
+static void* term_exec(void* pid){
+	int id = *((int *)pid);
 	pthread_mutex_lock(&mutex);
 	pthread_cond_wait(&cond, &mutex);
 
-	MSG* message = messg;
 	printf("%s terminal message\n", gettimestamp());
 
 	pthread_mutex_unlock(&mutex);
@@ -61,13 +56,12 @@ static void* term_exec(void* messg){
 
 
 // pipe process simulators
-static void* pipe_exec(void* messg) {
+static void* pipe_exec(void* pid) {
+	int id = *((int *)pid);
 	pthread_mutex_lock(&mutex);
 	pthread_cond_wait(&cond, &mutex);
 
-
-	MSG* message = messg;
-	printf("%s pipe %d message\n", gettimestamp(), message->pipeid);
+	printf("%s pipe %d message\n", gettimestamp(), id);
 	
 	pthread_mutex_unlock(&mutex);
 	return NULL;
